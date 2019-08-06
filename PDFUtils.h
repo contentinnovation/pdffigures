@@ -5,6 +5,8 @@
 #include <vector>
 #include <fstream>
 #include <iostream>
+#include <iomanip>
+#include <sstream>
 #include <memory>
 
 #include <TextOutputDev.h>

@@ -43,7 +43,7 @@ CaptionCandidate constructCandidate(TextWord *word, int page, bool lineStart,
     return CaptionCandidate();
 
   const std::regex wordRegex =
-      std::regex("^(Figure|(FIG)|(Fig\\.)||Fig|Table)$");
+      std::regex("^(Figure|FIGURE|FIG\\.?|Fig\\.?)$");
   std::match_results<const char *> wordMatch;
   if (not std::regex_match(word->getText()->getCString(), wordMatch, wordRegex))
     return CaptionCandidate();
