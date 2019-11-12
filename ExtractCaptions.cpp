@@ -43,12 +43,12 @@ CaptionCandidate constructCandidate(TextWord *word, int page, bool lineStart,
     return CaptionCandidate();
 
   const std::regex wordRegex =
-      std::regex("^(Figure|(FIG)|(Fig\\.)||Fig|Table)$");
+      std::regex("^(Figure|FIGURE|FIG\\.?|Fig\\.?)$");
   std::match_results<const char *> wordMatch;
   if (not std::regex_match(word->getText()->getCString(), wordMatch, wordRegex))
     return CaptionCandidate();
 
-  const std::regex numberRegex = std::regex("^([0-9]+)(:|\\.)?$");
+  const std::regex numberRegex = std::regex("^([A-Z][.]?)?([0-9]+)(:|\\.)?$");
 
   std::match_results<const char *> numberMatch;
   std::regex_match(word->getNext()->getText()->getCString(), numberMatch,
@@ -58,7 +58,7 @@ CaptionCandidate constructCandidate(TextWord *word, int page, bool lineStart,
   std::string captionNumStr;
   if (not numberMatch.empty()) {
     captionNumStr = numberMatch[0].str();
-    number = std::stoi(numberMatch[1].str());
+    number = std::stoi(numberMatch[2].str());
   } else {
     return CaptionCandidate();
   }

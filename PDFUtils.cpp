@@ -336,8 +336,9 @@ void writeText(TextPage *page, BOX *bb, const char *name,
 void saveFiguresImage(std::vector<Figure> &figures, PIX *original,
                       std::string prefix) {
   for (Figure fig : figures) {
-    std::string name = prefix + "-" + getFigureTypeString(fig.type) + "-" +
-                       std::to_string(fig.number) + ".png";
+    std::ostringstream ss;
+    ss << std::setw(3) << std::setfill('0') << std::to_string(fig.number);
+    std::string name = prefix + "-" + ss.str() + ".png";
     if (fig.imageBB != NULL) {
       pixWrite(name.c_str(), pixClipRectangle(original, fig.imageBB, NULL),
                IFF_PNG);
@@ -348,8 +349,9 @@ void saveFiguresImage(std::vector<Figure> &figures, PIX *original,
 void saveFiguresFullColorImage(std::vector<Figure> &figures, PIX *original,
                       std::string prefix, int multidpi) {
   for (Figure fig : figures) {
-    std::string name = prefix + "-" + getFigureTypeString(fig.type) + "-c" +
-                       std::to_string(fig.number) + ".png";
+    std::ostringstream ss;
+    ss << std::setw(3) << std::setfill('0') << std::to_string(fig.number);
+    std::string name = prefix + "-" + ss.str() + ".png";
     if (fig.imageBB != NULL) {
 
       fig.imageBB->x *= multidpi;
