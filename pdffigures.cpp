@@ -144,7 +144,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  globalParams = new GlobalParams(); // Set up poppler
+  globalParams = std::make_unique<GlobalParams>(); // Set up poppler
   // Build a writable str to pass to setTextEncoding
   std::string str = "UTF-8";
   std::vector<char> writableStr(str.begin(), str.end());
@@ -152,7 +152,7 @@ int main(int argc, char **argv) {
   globalParams->setTextEncoding(&writableStr.at(0));
 
   std::unique_ptr<PDFDoc> doc(
-      PDFDocFactory().createPDFDoc(GooString(argv[optind]), NULL, NULL));
+      PDFDocFactory().createPDFDoc(GooString(argv[optind])));
   if (not doc->isOk()) {
     return 1;
   }

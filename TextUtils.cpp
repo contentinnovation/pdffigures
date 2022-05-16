@@ -11,16 +11,16 @@ void printTextProperties(TextPage *page, DocumentStatistics *docStats,
     if (docStats->lineIsBold(line)) {
       printf("\nBOLD LINE\n");
     }
-    TextWord *word = line->getWords();
+    const TextWord *word = line->getWords();
     while (word != NULL) {
       int end = word->getLength() - 1;
-      TextFontInfo *fi = word->getFontInfo(end);
+      const TextFontInfo *fi = word->getFontInfo(end);
       printf("%s-%s: FS: %0.2f, Font: %s,"
              "FLAGS:%s%s%s%s, Large:%s, Itatlic:%s, Bold: %s\n",
-             word->getText()->getCString(),
+             word->getText()->c_str(),
              word->getNext() == NULL ? "NULL"
-                                     : word->getNext()->getText()->getCString(),
-             word->getFontSize(), word->getFontName(end)->getCString(),
+                                     : word->getNext()->getText()->c_str(),
+             word->getFontSize(), word->getFontName(end)->c_str(),
              fi->isBold() ? "T" : "F", fi->isItalic() ? "T" : "F",
              fi->isSerif() ? "T" : "F", fi->isSymbolic() ? "T" : "F",
              docStats->wordIsLarge(word) ? "T" : "F",
@@ -106,15 +106,15 @@ DocumentStatistics::DocumentStatistics(std::vector<TextPage *> &textPages,
       x2 = (double)((int)(x2 + 0.5));
       lMarginCounts[x] += 1;
       rMarginCounts[x2] += 1;
-      TextWord *word = line->getWords();
+      const TextWord *word = line->getWords();
       bool isBold = wordIsBold(word);
-      bool isDecimal = regex_match(word->getText()->getCString(), decimalRegex);
+      bool isDecimal = regex_match(word->getText()->c_str(), decimalRegex);
       while (word != NULL) {
         totalWords += 1;
         fontSizeCounts[word->getFontSize()] += 1;
         std::string fontName;
         if (word->getFontName(word->getLength() - 1) != NULL) {
-          fontName = word->getFontName(word->getLength() - 1)->getCString();
+          fontName = word->getFontName(word->getLength() - 1)->c_str();
         } else {
           fontName = "NULL";
         }
@@ -130,7 +130,7 @@ DocumentStatistics::DocumentStatistics(std::vector<TextPage *> &textPages,
 
     if (i > 0 and topLine != NULL) {
       if (botLine->getWords()->getNext() == NULL and
-          regex_match(botLine->getWords()->getText()->getCString(),
+          regex_match(botLine->getWords()->getText()->c_str(),
                       integerRegex)) {
         pageNumbers += 1;
       }
@@ -138,10 +138,10 @@ DocumentStatistics::DocumentStatistics(std::vector<TextPage *> &textPages,
       double x = 0, y = 0, x2 = 0, y2 = 0;
       getTextLineBB(topLine, &x, &y, &x2, &y2);
       if (std::abs((x2 + x) / 2 - center) < 20) {
-        TextWord *firstWord = topLine->getWords();
+        const TextWord *firstWord = topLine->getWords();
         std::string firstLineText = "";
         while (firstWord != NULL) {
-          firstLineText += firstWord->getText()->getCString();
+          firstLineText += firstWord->getText()->c_str();
           firstWord = firstWord->getNext();
         }
         pageHeaders[firstLineText] += 1;
@@ -237,9 +237,9 @@ bool DocumentStatistics::isBoldCentered(double x, double x2) {
 
 bool DocumentStatistics::isPageHeader(TextLine *line) {
   std::string lineText = "";
-  TextWord *word = line->getWords();
+  const TextWord *word = line->getWords();
   while (word != NULL) {
-    lineText += word->getText()->getCString();
+    lineText += word->getText()->c_str();
     word = word->getNext();
   }
   return pageHeaders.find(lineText) != pageHeaders.end();
@@ -248,7 +248,7 @@ bool DocumentStatistics::isPageHeader(TextLine *line) {
 bool DocumentStatistics::isPageNumber(TextLine *line) {
   if (hasPageNumbers) {
     if (line->getWords()->getNext() == NULL and
-        regex_match(line->getWords()->getText()->getCString(), integerRegex)) {
+        regex_match(line->getWords()->getText()->c_str(), integerRegex)) {
       return true;
     }
   }
@@ -256,7 +256,7 @@ bool DocumentStatistics::isPageNumber(TextLine *line) {
   ;
 }
 
-bool DocumentStatistics::wordIsLarge(TextWord *word) {
+bool DocumentStatistics::wordIsLarge(const TextWord *word) {
   return word->getFontSize() > modeFont;
 }
 
@@ -266,7 +266,7 @@ bool DocumentStatistics::wordIsStandardFont(TextWord *word) {
   return (word->getFontName(word->getLength() - 1) == NULL &&
           modeFontName == "NULL") ||
          (modeFontName.compare(
-              word->getFontName(word->getLength() - 1)->getCString()) == 0);
+              word->getFontName(word->getLength() - 1)->c_str()) == 0);
 }
 
 int DocumentStatistics::lineIsAligned(double x, double x2) {
@@ -288,12 +288,12 @@ int DocumentStatistics::lineIsAlignedToTol(double x, double x2, double l_tol,
 }
 
 bool DocumentStatistics::lineIsBold(TextLine *line) {
-  TextWord *word = line->getWords();
+  const TextWord *word = line->getWords();
   if (not wordIsBold(word) or getModeFont() > word->getFontSize() or
       word->getRotation() != 0) {
     return false;
   }
-  TextWord *next = word->getNext();
+  const TextWord *next = word->getNext();
   while (next != NULL) {
     if (next->getFontSize() != word->getFontSize() and wordIsBold(next) and
         next->getRotation() != 0) {
@@ -306,13 +306,13 @@ bool DocumentStatistics::lineIsBold(TextLine *line) {
 
 std::vector<TextLine *> getLines(TextPage *textPage) {
   std::vector<TextLine *> lines = std::vector<TextLine *>();
-  TextFlow *flow = textPage->getFlows();
+  const TextFlow *flow = textPage->getFlows();
   while (flow != NULL) {
-    TextBlock *block = flow->getBlocks();
+    const TextBlock *block = flow->getBlocks();
     while (block != NULL) {
-      TextLine *line = block->getLines();
+      const TextLine *line = block->getLines();
       while (line != NULL) {
-        lines.push_back(line);
+        lines.push_back(const_cast<TextLine*>(line));
         line = line->getNext();
       }
       block = block->getNext();
@@ -324,7 +324,7 @@ std::vector<TextLine *> getLines(TextPage *textPage) {
 
 void getTextLineBB(TextLine *line, double *minX, double *minY, double *maxX,
                    double *maxY) {
-  TextWord *word = line->getWords();
+  const TextWord *word = line->getWords();
   word->getBBox(minX, minY, maxX, maxY);
   word = word->getNext();
   while (word != NULL) {
@@ -340,7 +340,7 @@ void getTextLineBB(TextLine *line, double *minX, double *minY, double *maxX,
 
 const std::regex italicFontRegex = std::regex(".*(Slant|Itatlic).*");
 
-bool wordIsItalic(TextWord *const word) {
+bool wordIsItalic(const TextWord *const word) {
   if (word->getFontInfo(word->getLength() - 1) != NULL and
       word->getFontInfo(word->getLength() - 1)->isItalic())
     return true;
@@ -348,14 +348,14 @@ bool wordIsItalic(TextWord *const word) {
     return false;
   }
   std::match_results<const char *> italicFontMatch;
-  std::regex_match(word->getFontName(word->getLength() - 1)->getCString(),
+  std::regex_match(word->getFontName(word->getLength() - 1)->c_str(),
                    italicFontMatch, italicFontRegex);
   return not italicFontMatch.empty();
 }
 
 const std::regex boldFontRegex = std::regex(".*(Medi|Bold).*");
 
-bool wordIsBold(TextWord *const word) {
+bool wordIsBold(const TextWord *const word) {
   if (word->getFontInfo(word->getLength() - 1) != NULL and
       word->getFontInfo(word->getLength() - 1)->isBold())
     return true;
@@ -363,7 +363,7 @@ bool wordIsBold(TextWord *const word) {
     return false;
   }
   std::match_results<const char *> boldFontMatch;
-  std::regex_match(word->getFontName(word->getLength() - 1)->getCString(),
+  std::regex_match(word->getFontName(word->getLength() - 1)->c_str(),
                    boldFontMatch, boldFontRegex);
   return not boldFontMatch.empty();
 }

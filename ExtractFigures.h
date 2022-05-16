@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include <goo/GooList.h>
+/* #include <goo/GooList.h> */
 #include <leptonica/allheaders.h>
 
 #include "ExtractRegions.h"

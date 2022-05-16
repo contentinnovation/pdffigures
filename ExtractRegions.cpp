@@ -51,8 +51,8 @@ std::vector<TextLine *> getTitleLines(std::vector<TextLine *> &lines, int page,
     // otherwise author names ect. at top can cause problems
     int abstractY = -1;
     for (size_t i = 0; i < lines.size(); ++i) {
-      TextWord *word = lines.at(i)->getWords();
-      if (strcmp(word->getText()->getCString(), "Abstract") == 0) {
+      const TextWord *word = lines.at(i)->getWords();
+      if (strcmp(word->getText()->c_str(), "Abstract") == 0) {
         double x, y, x2, y2;
         word->getBBox(&x, &y, &x2, &y2);
         abstractY = y;
@@ -111,16 +111,16 @@ std::vector<TextLine *> getTitleLines(std::vector<TextLine *> &lines, int page,
       continue;
     }
 
-    TextWord *word = line->getWords();
+    const TextWord *word = line->getWords();
     bool isTitleStart =
-        regex_match(word->getText()->getCString(), titleNumberRegex);
+        regex_match(word->getText()->c_str(), titleNumberRegex);
     double x = 0, y = 0, x2 = 0, y2 = 0;
     getTextLineBB(line, &x, &y, &x2, &y2);
 
     if (docStats.isBoldCentered(x, x2) and
         not(word->getNext() == NULL and word->getText()->getLength() <= 4) and
         word->getFontSize() > docStats.getModeFont()) {
-      TextLine *nextLine = line->getNext();
+      const TextLine *nextLine = line->getNext();
       if (nextLine != NULL) {
         double nx, ny, nx2, ny2;
         nextLine->getWords()->getBBox(&nx, &ny, &nx2, &ny2);
@@ -215,7 +215,7 @@ PageRegions getPageRegions(PIX *original, TextPage *text, PIX *graphics,
 
   for (TextLine *line : lines) {
     bool rotated = line->getWords()->getRotation() != 0;
-    TextWord *word = line->getWords();
+    const TextWord *word = line->getWords();
     // Loop over words in the line
     while (word != NULL) {
       double lineX, lineY, lineX2, lineY2;
@@ -355,7 +355,7 @@ PageRegions getPageRegions(PIX *original, TextPage *text, PIX *graphics,
   for (int i = 0; i < otherText->n; ++i) {
     BOX *curBox = otherText->box[i];
     float graphicOverlap;
-    pixAverageInRect(graphicMask, curBox, &graphicOverlap);
+    pixAverageInRect(graphicMask, NULL, curBox, 0, 0, 0, &graphicOverlap);
     bool isBody;
     if (graphicOverlap > 0.40) {
       isBody = false;

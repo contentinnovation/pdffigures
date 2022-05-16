@@ -8,7 +8,7 @@
 
 #include "PDFUtils.h"
 
-CaptionStart::CaptionStart(int page, int number, TextWord *word,
+CaptionStart::CaptionStart(int page, int number, const TextWord *word,
                            FigureType type)
     : page(page), type(type), number(number), word(word) {}
 
@@ -53,38 +53,38 @@ public:
   ImageDetectDev(int maxHeight, int maxWidth)
       : maxHeight(maxHeight), maxWidth(maxWidth), filled(false) {}
 
-  GBool upsideDown() { return gFalse; }
-  GBool useDrawChar() { return gFalse; }
-  GBool interpretType3Chars() { return gTrue; }
+  bool upsideDown() { return false; }
+  bool useDrawChar() { return false; }
+  bool interpretType3Chars() { return true; }
 
   virtual void drawImageMask(GfxState *state, Object *ref, Stream *str,
-                             int width, int height, GBool invert,
-                             GBool interpolate, GBool inlineImg) {
+                             int width, int height, bool invert,
+                             bool interpolate, bool inlineImg) {
     if (width > maxWidth and height > maxHeight)
       filled = true;
   }
 
   virtual void drawImage(GfxState *state, Object *ref, Stream *str, int width,
                          int height, GfxImageColorMap *colorMap,
-                         GBool interpolate, int *maskColors, GBool inlineImg) {
+                         bool interpolate, const int *maskColors, bool inlineImg) {
     if (width > maxWidth and height > maxHeight)
       filled = true;
   }
 
   virtual void drawMaskedImage(GfxState *state, Object *ref, Stream *str,
                                int width, int height,
-                               GfxImageColorMap *colorMap, GBool interpolate,
+                               GfxImageColorMap *colorMap, bool interpolate,
                                Stream *maskStr, int maskWidth, int maskHeight,
-                               GBool maskInvert, GBool maskInterpolate) {
+                               bool maskInvert, bool maskInterpolate) {
     if (width > maxWidth and height > maxHeight)
       filled = true;
   }
 
   virtual void
   drawSoftMaskedImage(GfxState *state, Object *ref, Stream *str, int width,
-                      int height, GfxImageColorMap *colorMap, GBool interpolate,
+                      int height, GfxImageColorMap *colorMap, bool interpolate,
                       Stream *maskStr, int maskWidth, int maskHeight,
-                      GfxImageColorMap *maskColorMap, GBool maskInterpolate) {
+                      GfxImageColorMap *maskColorMap, bool maskInterpolate) {
     if (width > maxWidth and height > maxHeight)
       filled = true;
   }
@@ -102,12 +102,12 @@ class SplashGraphicsOutputDev : public SplashOutputDev {
 
 public:
   SplashGraphicsOutputDev(SplashColorMode colorModeA, int bitmapRowPadA,
-                          GBool reverseVideoA, SplashColorPtr paperColorA)
+                          bool reverseVideoA, SplashColorPtr paperColorA)
       : SplashOutputDev(colorModeA, bitmapRowPadA, reverseVideoA, paperColorA) {}
 
-  GBool useDrawChar() override { return gTrue; }
+  bool useDrawChar() override { return true; }
 
-  GBool interpretType3Chars() override { return gFalse; }
+  bool interpretType3Chars() override { return false; }
 
   void type3D1(GfxState *state, double wx, double wy, double llx, double lly,
                double urx, double ury) override {}
@@ -116,20 +116,20 @@ public:
 
   void endStringOp(GfxState *state) override {}
 
-  void beginString(GfxState *state, GooString *str) override {}
+  void beginString(GfxState *state, const GooString *str) override {}
 
   void endString(GfxState *state) override {}
 
   void drawChar(GfxState *state, double x, double y, double dx, double dy,
                 double originX, double originY, CharCode code, int nBytes,
-                Unicode *u, int uLen) override {}
+                const Unicode *u, int uLen) override {}
 
-  void drawString(GfxState *state, GooString *str) override {}
+  void drawString(GfxState *state, const GooString *str) override {}
 
-  GBool beginType3Char(GfxState *state, double x, double y, double dx,
-                       double dy, CharCode code, Unicode *u, int uLen) override {
+  bool beginType3Char(GfxState *state, double x, double y, double dx,
+                       double dy, CharCode code, const Unicode *u, int uLen) override {
     // TODO decide if true is correct
-    return gFalse;
+    return false;
   }
 
   void endType3Char(GfxState *state) override {}
@@ -140,7 +140,7 @@ public:
 
   void incCharCount(int nChars) override {}
 
-  void beginActualText(GfxState *state, GooString *text) override {}
+  void beginActualText(GfxState *state, const GooString *text) override {}
 
   void endActualText(GfxState *state) override {}
 };
@@ -149,7 +149,7 @@ PIX *bitmapToPix(SplashBitmap *bitmap) {
   if (bitmap->getMode() != splashModeMono8)
     return NULL;
   PIX *pix = pixCreate(bitmap->getWidth(), bitmap->getHeight(), 8);
-  SplashColorPtr pixel = new Guchar[1];
+  SplashColorPtr pixel = new unsigned char[1];
   for (int x = 0; x < bitmap->getWidth(); ++x) {
     for (int y = 0; y < bitmap->getHeight(); ++y) {
       bitmap->getPixel(x, y, pixel);
@@ -163,7 +163,7 @@ PIX *fullColorBitmapToPix(SplashBitmap *bitmap) {
   if (bitmap->getMode() != splashModeRGB8)
     return NULL;
   PIX *pix = pixCreate(bitmap->getWidth(), bitmap->getHeight(), 32);
-  SplashColorPtr pixel = new Guchar[3];
+  SplashColorPtr pixel = new unsigned char[3];
   for (int x = 0; x < bitmap->getWidth(); ++x) {
     for (int y = 0; y < bitmap->getHeight(); ++y) {
       bitmap->getPixel(x, y, pixel);
@@ -179,7 +179,7 @@ bool isFilledByImage(PDFDoc *doc, int page) {
   int dpi = 72;
   ImageDetectDev *dev = new ImageDetectDev(doc->getPageMediaWidth(page) - 10,
                                            doc->getPageMediaHeight(page) - 10);
-  doc->displayPage(dev, page, dpi, dpi, 0, gTrue, gFalse, gFalse);
+  doc->displayPage(dev, page, dpi, dpi, 0, true, false, false);
   bool filled = dev->getFilled();
   delete dev;
   return filled;
@@ -187,20 +187,20 @@ bool isFilledByImage(PDFDoc *doc, int page) {
 
 PIX *getPix(SplashOutputDev *splashOut, PDFDoc *doc, int page, double dpi) {
   splashOut->startDoc(doc);
-  doc->displayPage(splashOut, page, dpi, dpi, 0, gTrue, gFalse, gFalse);
+  doc->displayPage(splashOut, page, dpi, dpi, 0, true, false, false);
   return bitmapToPix(splashOut->getBitmap());
 }
 
 PIX *getFullColorPix(SplashOutputDev *splashOut, PDFDoc *doc, int page, double dpi) {
   splashOut->startDoc(doc);
-  doc->displayPage(splashOut, page, dpi, dpi, 0, gTrue, gFalse, gFalse);
+  doc->displayPage(splashOut, page, dpi, dpi, 0, true, false, false);
   return fullColorBitmapToPix(splashOut->getBitmap());
 }
 
 std::unique_ptr<PIX> getFullRenderPix(PDFDoc *doc, int page, double dpi) {
   SplashColor paperColor = {255, 255, 255};
   SplashOutputDev *splashOut =
-    new SplashOutputDev(splashModeMono8, 4, gFalse, paperColor);
+    new SplashOutputDev(splashModeMono8, 4, false, paperColor);
   std::unique_ptr<PIX> output(getPix(splashOut, doc, page, dpi));
   delete splashOut;
   return output;
@@ -209,7 +209,7 @@ std::unique_ptr<PIX> getFullRenderPix(PDFDoc *doc, int page, double dpi) {
 std::unique_ptr<PIX> getGraphicOnlyPix(PDFDoc *doc, int page, double dpi) {
   SplashColor paperColor = {255, 255, 255};
   SplashGraphicsOutputDev *splashOut =
-      new SplashGraphicsOutputDev(splashModeMono8, 4, gFalse, paperColor);
+      new SplashGraphicsOutputDev(splashModeMono8, 4, false, paperColor);
   std::unique_ptr<PIX> output(getPix(splashOut, doc, page, dpi));
   delete splashOut;
   return output;
@@ -218,7 +218,7 @@ std::unique_ptr<PIX> getGraphicOnlyPix(PDFDoc *doc, int page, double dpi) {
 std::unique_ptr<PIX> getFullColorRenderPix(PDFDoc *doc, int page, double dpi) {
   SplashColor paperColor = {255, 255, 255};
   SplashOutputDev *splashOut =
-    new SplashOutputDev(splashModeRGB8, 4, gFalse, paperColor);
+    new SplashOutputDev(splashModeRGB8, 4, false, paperColor);
   std::unique_ptr<PIX> output(getFullColorPix(splashOut, doc, page, dpi));
   delete splashOut;
   return output;
@@ -228,8 +228,8 @@ std::vector<TextPage *> getTextPages(PDFDoc *doc, double dpi) {
   std::vector<TextPage *> text = std::vector<TextPage *>();
   for (int i = 1; i <= doc->getNumPages(); ++i) {
     // TOOD should not need to rebuild this each time
-    TextOutputDev *output = new TextOutputDev(NULL, gFalse, 0, gFalse, gFalse);
-    doc->displayPage(output, i, dpi, dpi, 0, gFalse, gFalse, gFalse);
+    TextOutputDev *output = new TextOutputDev(NULL, false, 0, false, false);
+    doc->displayPage(output, i, dpi, dpi, 0, false, false, false);
     text.push_back(output->takeText());
     delete output;
   }
@@ -303,7 +303,8 @@ GooString *jsonSanitizeUTF8(GooString *str) {
 void writeText(TextPage *page, BOX *bb, const char *name,
                std::ostream &output) {
   output << "\"" << name << "\" : [";
-  TextWordList *words = page->makeWordList(gFalse);
+  std::unique_ptr<TextWordList> word_list = page->makeWordList(false);
+  TextWordList *words = word_list.release();
   bool firstWord = true;
   for (int j = 0; j < words->getLength(); ++j) {
     TextWord *word = words->get(j);
@@ -324,7 +325,7 @@ void writeText(TextPage *page, BOX *bb, const char *name,
       GooString *str = jsonSanitizeUTF8(word->getText());
       output << "{\"Rotation\": " << word->getRotation() << ",\"TextBB\": [";
       output << x << "," << y << "," << x2 << "," << y2 << "], \"Text\": \"";
-      output << str->getCString() << "\"}";
+      output << str->c_str() << "\"}";
       delete str;
       firstWord = false;
     }
@@ -389,8 +390,8 @@ void writeFigureJSON(Figure &fig, int width, int height, double dpi,
     output << fig.captionBB->y + fig.captionBB->h << "],\n";
     BOX *bb = fig.captionBB;
     GooString *caption = jsonSanitizeUTF8(
-        page->getText(bb->x, bb->y, bb->x + bb->w, bb->y + bb->h));
-    output << "\"Caption\": \"" << caption->getCString() << "\",\n";
+        page->getText(bb->x, bb->y, bb->x + bb->w, bb->y + bb->h, eolUnix));
+    output << "\"Caption\": \"" << caption->c_str() << "\",\n";
     delete caption;
   }
   if (fig.imageBB == NULL) {
