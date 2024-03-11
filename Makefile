@@ -1,4 +1,4 @@
-CC=g++ -std=c++11
+CC=g++ -std=c++17
 
 # Is 0 or 1 depending on whether leptonica is in pkg-config
 LEPT_IN_PKG_CONFIG := $(shell pkg-config --exists lept && echo $$?)
