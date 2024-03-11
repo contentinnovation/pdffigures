@@ -339,7 +339,7 @@ void saveFiguresImage(std::vector<Figure> &figures, PIX *original,
   for (Figure fig : figures) {
     std::ostringstream ss;
     ss << std::setw(3) << std::setfill('0') << std::to_string(fig.number);
-    std::string name = prefix + "-" + ss.str() + ".png";
+    std::string name = prefix + "-" + getFigureTypeString(fig.type) + "-" + ss.str() + ".png";
     if (fig.imageBB != NULL) {
       pixWrite(name.c_str(), pixClipRectangle(original, fig.imageBB, NULL),
                IFF_PNG);
@@ -352,7 +352,7 @@ void saveFiguresFullColorImage(std::vector<Figure> &figures, PIX *original,
   for (Figure fig : figures) {
     std::ostringstream ss;
     ss << std::setw(3) << std::setfill('0') << std::to_string(fig.number);
-    std::string name = prefix + "-" + ss.str() + ".png";
+    std::string name = prefix + "-" + getFigureTypeString(fig.type) + "-" + ss.str() + ".png";
     if (fig.imageBB != NULL) {
 
       fig.imageBB->x *= multidpi;
