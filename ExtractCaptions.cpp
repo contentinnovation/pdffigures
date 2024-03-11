@@ -58,17 +58,18 @@ int romanToInt(const std::string& s) {
 }
 
 CaptionCandidate constructCandidate(const TextWord *word, int page, bool lineStart,
-                                    bool blockStart) {
+                                    bool blockStart, bool tablesOnly) {
   if (word->getNext() == NULL)
     return CaptionCandidate();
 
-  const std::regex wordRegex =
-      std::regex("^(Figure|FIGURE|FIG\\.?|Fig\\.?|Table|TABLE)$");
+  const std::string captionCue = tablesOnly ? "^(Table|TABLE)$" : "^(Figure|FIGURE|FIG\\.?|Fig\\.?|Table|TABLE)$";
+  const std::regex wordRegex = std::regex(captionCue);
+
   std::match_results<const char *> wordMatch;
   if (not std::regex_match(word->getText()->c_str(), wordMatch, wordRegex))
     return CaptionCandidate();
 
-  const std::regex numberRegex = std::regex("^([A-Z0-9][.\\-]?)?([0-9IVX]+)(:|\\.)?$");
+  const std::regex numberRegex = std::regex("^([1-9][.\\-]|[A-H][.\\-]?)?([0-9IVX]+)(:|\\.)?$");
 
   std::match_results<const char *> numberMatch;
   std::regex_match(word->getNext()->getText()->c_str(), numberMatch,
@@ -76,12 +77,14 @@ CaptionCandidate constructCandidate(const TextWord *word, int page, bool lineSta
 
   int number;
   std::string captionNumStr;
+  std::string captionIntStr;
   if (not numberMatch.empty()) {
-    captionNumStr = numberMatch[0].str();
+    captionNumStr = numberMatch[0].str(); // the whole caption number match including prefix and separator
+    captionIntStr = numberMatch[2].str(); // just the integer part of the caption, e.g. 1
     try {
-      number = std::stoi(numberMatch[2].str());
+      number = std::stoi(captionIntStr);
     } catch (std::invalid_argument e) {
-      number = romanToInt(numberMatch[2].str());
+      number = romanToInt(captionIntStr);
     }
     
   } else {
@@ -104,7 +107,7 @@ typedef std::unordered_map<FigureId,
                            std::unique_ptr<std::vector<CaptionCandidate>>>
     CandidateCollection;
 
-CandidateCollection collectCandidates(const std::vector<TextPage *> &pages) {
+CandidateCollection collectCandidates(const std::vector<TextPage *> &pages, bool tablesOnly) {
   CandidateCollection collection = CandidateCollection();
   for (size_t i = 0; i < pages.size(); ++i) {
     TextFlow const *flow = pages.at(i)->getFlows();
@@ -118,7 +121,7 @@ CandidateCollection collectCandidates(const std::vector<TextPage *> &pages) {
           bool lineStart = true;
           while (word != NULL) {
             CaptionCandidate cc =
-                constructCandidate(word, i, lineStart, blockStart);
+                constructCandidate(word, i, lineStart, blockStart, tablesOnly);
             if (cc.word != NULL) {
               int id = cc.getId();
               if (collection.find(id) == collection.end()) {
@@ -263,8 +266,9 @@ bool anyDuplicates(const CandidateCollection &collection) {
 
 std::map<int, std::vector<CaptionStart>>
 extractCaptionsFromText(const std::vector<TextPage *> &textPages,
-                        bool verbose) {
-  CandidateCollection candidates = collectCandidates(textPages);
+                        bool verbose,
+                        bool tablesOnly) {
+  CandidateCollection candidates = collectCandidates(textPages, tablesOnly);
   // In order to be considered
   ColonOnly f1 = ColonOnly();
   PeriodOnly f2 = PeriodOnly();

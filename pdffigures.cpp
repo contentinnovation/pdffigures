@@ -13,12 +13,13 @@
 #include "ExtractRegions.h"
 #include "ExtractFigures.h"
 
-const std::string version = "1.0.6";
+const std::string version = "1.1.0";
 
 void printUsage() {
   printf("Usage: figureextractor [flags] </path/to/pdf>\n");
   printf("--version\n");
   printf("-v, --verbose\n");
+  printf("-t, --tables-only: Only extract tables\n");
   printf(
       "-m, --save-mistakes: If combined with -f,-o,-a additionally save/show figures that were detected\
  but could not be extracted successfully\n");
@@ -45,6 +46,7 @@ void printUsage() {
 
 int main(int argc, char **argv) {
   int verbose = false;
+  int tablesOnly = false;
   int showSteps = false;
   int showFinal = false;
   int onlyPage = -1;
@@ -61,6 +63,7 @@ int main(int argc, char **argv) {
   const struct option long_options[] = {
       {"version", no_argument, NULL, 0},
       {"verbose", no_argument, &verbose, true},
+      {"tables-only", no_argument, &tablesOnly, false},
       {"show-steps", no_argument, &showSteps, true},
       {"show-final", no_argument, &showFinal, true},
       {"save-final", required_argument, NULL, 'a'},
@@ -76,7 +79,7 @@ int main(int argc, char **argv) {
 
   int opt;
   int optionIndex;
-  while ((opt = getopt_long(argc, argv, "svfrmic:j:a:o:p:", long_options,
+  while ((opt = getopt_long(argc, argv, "stvfrmic:j:a:o:p:", long_options,
                             &optionIndex)) != -1) {
     switch (opt) {
     case 0:
@@ -85,6 +88,9 @@ int main(int argc, char **argv) {
         return 0;
       }
       break; // flag was set
+    case 't':
+      tablesOnly = true;
+      break;
     case 'm':
       saveMistakes = true;
       break;
@@ -172,7 +178,7 @@ int main(int argc, char **argv) {
   std::vector<Figure> errors = std::vector<Figure>();
 
   std::map<int, std::vector<CaptionStart>> captionStarts =
-      extractCaptionsFromText(pages, verbose);
+      extractCaptionsFromText(pages, verbose, tablesOnly);
 
   if (captionStarts.size() == 0) {
     printf("No captions found!");
