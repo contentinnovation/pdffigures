@@ -16,7 +16,7 @@ public:
                      bool quiet);
   double getModeFont();
 
-  bool wordIsLarge(TextWord *word);
+  bool wordIsLarge(const TextWord *word);
 
   int lineIsAligned(double x, double x2);
 
@@ -67,9 +67,9 @@ std::vector<TextLine *> getLines(TextPage *textPage);
 void getTextLineBB(TextLine *line, double *minX, double *minY, double *maxX,
                    double *maxY);
 
-bool wordIsItalic(TextWord *const word);
+bool wordIsItalic(const TextWord *const word);
 
-bool wordIsBold(TextWord *const word);
+bool wordIsBold(const TextWord *const word);
 
 bool wordEndsWithPeriod(TextWord *const word);
 

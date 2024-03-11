@@ -16,7 +16,7 @@ public:
         number(-1), page(-1), periodMatch(false), colonMatch(false),
         caps(false), abbreviated(false) {}
 
-  CaptionCandidate(TextWord *word, bool lineStart, bool blockStart,
+  CaptionCandidate(const TextWord *word, bool lineStart, bool blockStart,
                    FigureType type, int number, int page, bool periodMatch,
                    bool colonMatch, bool caps, bool abbreviated)
       : word(word), lineStart(lineStart), blockStart(blockStart), type(type),
@@ -25,7 +25,7 @@ public:
 
   FigureId getId() { return number * (type == FIGURE ? 1 : -1); }
 
-  TextWord *word;
+  const TextWord *word;
   bool lineStart;
   bool blockStart;
   FigureType type;
@@ -37,28 +37,53 @@ public:
   bool abbreviated;
 };
 
-CaptionCandidate constructCandidate(TextWord *word, int page, bool lineStart,
+
+int romanToInt(const std::string& s) {
+    std::map<char, int> roman = {
+        {'I', 1},
+        {'V', 5},
+        {'X', 10}
+    };
+    int total = 0;
+    int prevValue = 0;
+    for (int i = s.length() - 1; i >= 0; i--) {
+        int value = roman[s[i]];
+        if (value < prevValue)
+            total -= value;
+        else
+            total += value;
+        prevValue = value;
+    }
+    return total;
+}
+
+CaptionCandidate constructCandidate(const TextWord *word, int page, bool lineStart,
                                     bool blockStart) {
   if (word->getNext() == NULL)
     return CaptionCandidate();
 
   const std::regex wordRegex =
-      std::regex("^(Figure|FIGURE|FIG\\.?|Fig\\.?)$");
+      std::regex("^(Figure|FIGURE|FIG\\.?|Fig\\.?|Table|TABLE)$");
   std::match_results<const char *> wordMatch;
-  if (not std::regex_match(word->getText()->getCString(), wordMatch, wordRegex))
+  if (not std::regex_match(word->getText()->c_str(), wordMatch, wordRegex))
     return CaptionCandidate();
 
-  const std::regex numberRegex = std::regex("^([A-Z][.]?)?([0-9]+)(:|\\.)?$");
+  const std::regex numberRegex = std::regex("^([A-Z0-9][.\\-]?)?([0-9IVX]+)(:|\\.)?$");
 
   std::match_results<const char *> numberMatch;
-  std::regex_match(word->getNext()->getText()->getCString(), numberMatch,
+  std::regex_match(word->getNext()->getText()->c_str(), numberMatch,
                    numberRegex);
 
   int number;
   std::string captionNumStr;
   if (not numberMatch.empty()) {
     captionNumStr = numberMatch[0].str();
-    number = std::stoi(numberMatch[2].str());
+    try {
+      number = std::stoi(numberMatch[2].str());
+    } catch (std::invalid_argument e) {
+      number = romanToInt(numberMatch[2].str());
+    }
+    
   } else {
     return CaptionCandidate();
   }
@@ -82,14 +107,14 @@ typedef std::unordered_map<FigureId,
 CandidateCollection collectCandidates(const std::vector<TextPage *> &pages) {
   CandidateCollection collection = CandidateCollection();
   for (size_t i = 0; i < pages.size(); ++i) {
-    TextFlow *flow = pages.at(i)->getFlows();
+    TextFlow const *flow = pages.at(i)->getFlows();
     while (flow != NULL) {
-      TextBlock *block = flow->getBlocks();
+      const TextBlock *block = flow->getBlocks();
       while (block != NULL) {
         bool blockStart = true;
-        TextLine *line = block->getLines();
+        const TextLine *line = block->getLines();
         while (line != NULL) {
-          TextWord *word = line->getWords();
+          const TextWord *word = line->getWords();
           bool lineStart = true;
           while (word != NULL) {
             CaptionCandidate cc =

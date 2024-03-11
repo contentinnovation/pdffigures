@@ -9,7 +9,7 @@ namespace {
 void printLine(std::vector<TextWord *> line, const char *header) {
   printf("%s:", header);
   for (size_t i = 0; i < line.size(); ++i) {
-    printf("%s ", line.at(i)->getText()->getCString());
+    printf("%s ", line.at(i)->getText()->c_str());
   }
   printf("\n");
 }
@@ -17,15 +17,15 @@ void printLine(std::vector<TextWord *> line, const char *header) {
 // Gather all the TextWord objects in a page
 std::vector<TextWord *> collectWords(TextPage *page) {
   std::vector<TextWord *> words = std::vector<TextWord *>();
-  TextFlow *flow = page->getFlows();
+  const TextFlow *flow = page->getFlows();
   while (flow != NULL) {
-    TextBlock *block = flow->getBlocks();
+    const TextBlock *block = flow->getBlocks();
     while (block != NULL) {
-      TextLine *line = block->getLines();
+      const TextLine *line = block->getLines();
       while (line != NULL) {
-        TextWord *word = line->getWords();
+        const TextWord *word = line->getWords();
         while (word != NULL) {
-          words.push_back(word);
+          words.push_back(const_cast<TextWord*>(word));
           word = word->getNext();
         }
         line = line->getNext();
@@ -80,7 +80,7 @@ public:
 
 // Point where a word starts
 typedef std::pair<double, double> EdgeLocation;
-EdgeLocation getEdge(TextWord *word) {
+EdgeLocation getEdge(const TextWord *word) {
   double x, y, x2, y2;
   word->getBBox(&x, &y, &x2, &y2);
   return EdgeLocation(x, (y + y2) / 2.0);
@@ -307,7 +307,7 @@ Caption buildCaption(CaptionStart start, DocumentStatistics &docStats,
   double x, y, x2, y2;
   start.word->getBBox(&x, &y, &x2, &y2);
   std::vector<TextWord *> words = std::vector<TextWord *>();
-  words.push_back(start.word);
+  words.push_back(const_cast<TextWord*>(start.word));
   std::vector<TextWord *> yAlignedWords = getYAlignedWords(x, y, y2, allWords);
   double xLimit = getHorizontalLimit(yAlignedWords, paragraphEdges);
   x2 = extendLineRightFromCandidates(x2, xLimit, yAlignedWords, words);
