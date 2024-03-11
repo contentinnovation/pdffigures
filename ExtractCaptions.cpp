@@ -37,18 +37,38 @@ public:
   bool abbreviated;
 };
 
+
+int romanToInt(const std::string& s) {
+    std::map<char, int> roman = {
+        {'I', 1},
+        {'V', 5},
+        {'X', 10}
+    };
+    int total = 0;
+    int prevValue = 0;
+    for (int i = s.length() - 1; i >= 0; i--) {
+        int value = roman[s[i]];
+        if (value < prevValue)
+            total -= value;
+        else
+            total += value;
+        prevValue = value;
+    }
+    return total;
+}
+
 CaptionCandidate constructCandidate(const TextWord *word, int page, bool lineStart,
                                     bool blockStart) {
   if (word->getNext() == NULL)
     return CaptionCandidate();
 
   const std::regex wordRegex =
-      std::regex("^(Figure|FIGURE|FIG\\.?|Fig\\.?)$");
+      std::regex("^(Figure|FIGURE|FIG\\.?|Fig\\.?|Table|TABLE)$");
   std::match_results<const char *> wordMatch;
   if (not std::regex_match(word->getText()->c_str(), wordMatch, wordRegex))
     return CaptionCandidate();
 
-  const std::regex numberRegex = std::regex("^([A-Z0-9][.\\-]?)?([0-9]+)(:|\\.)?$");
+  const std::regex numberRegex = std::regex("^([A-Z0-9][.\\-]?)?([0-9IVX]+)(:|\\.)?$");
 
   std::match_results<const char *> numberMatch;
   std::regex_match(word->getNext()->getText()->c_str(), numberMatch,
@@ -58,7 +78,12 @@ CaptionCandidate constructCandidate(const TextWord *word, int page, bool lineSta
   std::string captionNumStr;
   if (not numberMatch.empty()) {
     captionNumStr = numberMatch[0].str();
-    number = std::stoi(numberMatch[2].str());
+    try {
+      number = std::stoi(numberMatch[2].str());
+    } catch (std::invalid_argument e) {
+      number = romanToInt(numberMatch[2].str());
+    }
+    
   } else {
     return CaptionCandidate();
   }
