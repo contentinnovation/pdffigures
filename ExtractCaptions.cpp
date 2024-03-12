@@ -62,7 +62,7 @@ CaptionCandidate constructCandidate(const TextWord *word, int page, bool lineSta
   if (word->getNext() == NULL)
     return CaptionCandidate();
 
-  const std::string captionCue = tablesOnly ? "^(Table|TABLE)$" : "^(Figure|FIGURE|FIG\\.?|Fig\\.?|Table|TABLE)$";
+  const std::string captionCue = tablesOnly ? "^(Table|TABLE)$" : "^(Figure|FIGURE|FIG\\.?|Fig\\.?)$";
   const std::regex wordRegex = std::regex(captionCue);
 
   std::match_results<const char *> wordMatch;
