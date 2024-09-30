@@ -16,7 +16,7 @@
 const std::string version = "1.1.0";
 
 void printUsage() {
-  printf("Usage: figureextractor [flags] </path/to/pdf>\n");
+  printf("Usage: pdffigures [flags] </path/to/pdf>\n");
   printf("--version\n");
   printf("-v, --verbose\n");
   printf("-t, --tables-only: Only extract tables\n");
@@ -28,6 +28,7 @@ void printUsage() {
   printf("-a, --save-final <prefix: Save page images with captions and images "
          "marked to the given prefix. Files will be saved to "
          "prefix-<page#>.png\n");
+  printf("-l, --lang <language>: Document language: defaults to en\n");
   printf("-o, --save-figures <prefix>: Save images of detected figures to "
          "prefix. Files are save to prefix-<(Table|Figure)>-<Number>.png\n");
   printf("-c, --save-color-images <prefix>: Save color images with a high resolution for figures and tables."
@@ -53,6 +54,7 @@ int main(int argc, char **argv) {
   int reverse = false;
   int saveMistakes = false;
   int textAsImage = false;
+  std::string lang = "en";
   std::string imagePrefix = "";
   std::string colorImagePrefix = "";
   std::string jsonPrefix = "";
@@ -64,6 +66,7 @@ int main(int argc, char **argv) {
       {"version", no_argument, NULL, 0},
       {"verbose", no_argument, &verbose, true},
       {"tables-only", no_argument, &tablesOnly, false},
+      {"lang", required_argument, NULL, 'l'},
       {"show-steps", no_argument, &showSteps, true},
       {"show-final", no_argument, &showFinal, true},
       {"save-final", required_argument, NULL, 'a'},
@@ -79,7 +82,7 @@ int main(int argc, char **argv) {
 
   int opt;
   int optionIndex;
-  while ((opt = getopt_long(argc, argv, "stvfrmic:j:a:o:p:", long_options,
+  while ((opt = getopt_long(argc, argv, "stvfrmic:j:a:o:p:l:", long_options,
                             &optionIndex)) != -1) {
     switch (opt) {
     case 0:
@@ -102,6 +105,9 @@ int main(int argc, char **argv) {
       break;
     case 'f':
       showFinal = true;
+      break;
+    case 'l':
+      lang = optarg;
       break;
     case 'p':
       onlyPage = std::stoi(optarg);
@@ -178,7 +184,7 @@ int main(int argc, char **argv) {
   std::vector<Figure> errors = std::vector<Figure>();
 
   std::map<int, std::vector<CaptionStart>> captionStarts =
-      extractCaptionsFromText(pages, verbose, tablesOnly);
+      extractCaptionsFromText(pages, verbose, tablesOnly, lang);
 
   if (captionStarts.size() == 0) {
     printf("No captions found!");

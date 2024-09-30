@@ -5,6 +5,19 @@
 
 namespace {
 
+// Define the translations map
+const std::unordered_map<std::string, std::unordered_map<std::string, std::string>> translations = {
+    {"fr", {{"Figure", "Figure|FIGURE|FIG\\.?|Fig\\.?"}, {"Table", "Tableau|TABLEAU"}}},
+    {"es", {{"Figure", "Figura|FIGURA|FIG\\.?|Fig\\.?"}, {"Table", "Tabla|TABLA"}}},
+    {"it", {{"Figure", "Figura|FIGURA|FIG\\.?|Fig\\.?"}, {"Table", "Tabella|TABELLA"}}},
+    {"de", {{"Figure", "Abbildung|ABBILDUNG|Figur|FIGUR|FIG\\.?|Fig\\.?|ABB\\.?|Abb\\.?"}, {"Table", "Tabelle|TABELLE"}}},
+    {"pt", {{"Figure", "Figura|FIGURA|FIG\\.?|Fig\\.?"}, {"Table", "Tabela|TABELA"}}},
+    {"nl", {{"Figure", "Figuur|FIGUUR|FIG\\.?|Fig\\.?"}, {"Table", "Tabel|TABEL"}}},
+    {"da", {{"Figure", "Figur|FIGUR|FIG\\.?|Fig\\.?"}, {"Table", "Tabel|TABEL"}}},
+    {"sv", {{"Figure", "Figur|FIGUR|FIG\\.?|Fig\\.?"}, {"Table", "Tabell|TABELL"}}},
+    {"no", {{"Figure", "Figur|FIGUR|FIG\\.?|Fig\\.?"}, {"Table", "Tabell|TABELL"}}}
+};
+
 // ****** Gathing caption candidates *******
 // TODO using an int as the FigureId is kind of a hack
 typedef int FigureId;
@@ -58,11 +71,21 @@ int romanToInt(const std::string& s) {
 }
 
 CaptionCandidate constructCandidate(const TextWord *word, int page, bool lineStart,
-                                    bool blockStart, bool tablesOnly) {
+                                    bool blockStart, bool tablesOnly, const std::string& lang = "en") {
   if (word->getNext() == NULL)
     return CaptionCandidate();
 
-  const std::string captionCue = tablesOnly ? "^(Table|TABLE)$" : "^(Figure|FIGURE|FIG\\.?|Fig\\.?)$";
+  std::string figureTerm = "Figure|FIGURE|FIG\\.?|Fig\\.?";
+  std::string tableTerm = "Table|TABLE";
+
+  if (translations.find(lang) != translations.end()) {
+    figureTerm = translations.at(lang).at("Figure");
+    tableTerm = translations.at(lang).at("Table");
+  }
+    
+//   const std::string captionCue = tablesOnly ? "^(Table|TABLE)$" : "^(Figure|FIGURE|FIG\\.?|Fig\\.?)$";
+  const std::string captionCue = tablesOnly ? "^(" + tableTerm + ")$" : "^(" + figureTerm + ")$";
+  
   const std::regex wordRegex = std::regex(captionCue);
 
   std::match_results<const char *> wordMatch;
@@ -107,7 +130,7 @@ typedef std::unordered_map<FigureId,
                            std::unique_ptr<std::vector<CaptionCandidate>>>
     CandidateCollection;
 
-CandidateCollection collectCandidates(const std::vector<TextPage *> &pages, bool tablesOnly) {
+CandidateCollection collectCandidates(const std::vector<TextPage *> &pages, bool tablesOnly, const std::string& lang = "en") {
   CandidateCollection collection = CandidateCollection();
   for (size_t i = 0; i < pages.size(); ++i) {
     TextFlow const *flow = pages.at(i)->getFlows();
@@ -121,7 +144,7 @@ CandidateCollection collectCandidates(const std::vector<TextPage *> &pages, bool
           bool lineStart = true;
           while (word != NULL) {
             CaptionCandidate cc =
-                constructCandidate(word, i, lineStart, blockStart, tablesOnly);
+                constructCandidate(word, i, lineStart, blockStart, tablesOnly, lang);
             if (cc.word != NULL) {
               int id = cc.getId();
               if (collection.find(id) == collection.end()) {
@@ -267,8 +290,9 @@ bool anyDuplicates(const CandidateCollection &collection) {
 std::map<int, std::vector<CaptionStart>>
 extractCaptionsFromText(const std::vector<TextPage *> &textPages,
                         bool verbose,
-                        bool tablesOnly) {
-  CandidateCollection candidates = collectCandidates(textPages, tablesOnly);
+                        bool tablesOnly,
+                        const std::string& lang = "en") {
+  CandidateCollection candidates = collectCandidates(textPages, tablesOnly, lang);
   // In order to be considered
   ColonOnly f1 = ColonOnly();
   PeriodOnly f2 = PeriodOnly();
