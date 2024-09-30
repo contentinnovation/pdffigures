@@ -17,6 +17,6 @@
  * are expected be valid.
  **/
 std::map<int, std::vector<CaptionStart>>
-extractCaptionsFromText(const std::vector<TextPage *> &textPages, bool verbose, bool tablesOnly);
+extractCaptionsFromText(const std::vector<TextPage *> &textPages, bool verbose, bool tablesOnly, const std::string& lang);
 
 #endif /* defined(__figureextractor__ExtractCaptions__) */
